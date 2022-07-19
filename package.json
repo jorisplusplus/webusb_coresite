@@ -18,6 +18,8 @@
     "vue-color-kit": "^1.0.5",
     "vue-router": "4",
     "vue3-json-editor": "^1.1.5",
+    "vue3-tree": "^0.11.3",
+    "vue3-treeview": "^0.3.8",
     "vuetify": "^3.0.0-beta.5",
     "webfontloader": "^1.0.0",
     "xterm": "^4.19.0",
