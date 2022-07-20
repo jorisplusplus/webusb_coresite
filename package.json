@@ -17,6 +17,7 @@
     "vue": "^3.2.13",
     "vue-color-kit": "^1.0.5",
     "vue-router": "4",
+    "vue3-ace-editor": "^2.2.2",
     "vue3-json-editor": "^1.1.5",
     "vue3-tree": "^0.11.3",
     "vue3-treeview": "^0.3.8",
