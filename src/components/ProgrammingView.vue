@@ -5,27 +5,38 @@ import "vue3-treeview/dist/style.css";
 import { VAceEditor } from "vue3-ace-editor";
 
 const config = reactive({
-  roots: ["id1", "id2"],
+  roots: ["flash", "sdcard"],
   leaves: [],
+  dragAndDrop: true,
+  editable: false
 });
 
 const filename = ref("/flash/cache/scratch.py")
 
 const nodes = reactive({
-  id1: {
-    text: "text1",
-    children: ["id11", "id12"],
+  flash: {
+    text: "Flash",
+    type: "folder",
+    state: {
+      draggable: false
+    },
+    children: ["id11"],
   },
   id11: {
     text: "text11",
   },
-  id12: {
-    text: "text12",
-  },
-  id2: {
-    text: "text2",
+  sdcard: {
+    text: "SD Card",
+    type: "folder",
+    state: {
+      draggable: false
+    }
   },
 });
+
+function focus(n) {
+  console.log(n)
+}
 
 function addServerNode(n) {
   console.log("tata");
@@ -63,18 +74,23 @@ function addServerNode(n) {
           <v-row no-gutters>
           <v-btn color="primary" class="grey lighten-4 ma-1">
             <v-icon large>mdi-folder-plus</v-icon>
+            <v-tooltip activator="parent" location="bottom">Create folder</v-tooltip>
           </v-btn>
           <v-btn color="primary" class="grey lighten-4 ma-1">
             <v-icon large>mdi-file</v-icon>
+            <v-tooltip activator="parent" location="bottom">Create file</v-tooltip>
           </v-btn>
           <v-btn color="primary" class="grey lighten-4 ma-1">
             <v-icon large>mdi-file-document</v-icon>
+            <v-tooltip activator="parent" location="bottom">Rename file</v-tooltip>
           </v-btn>
           <v-btn color="primary" class="grey lighten-4 ma-1">
             <v-icon large>mdi-delete</v-icon>
+            <v-tooltip activator="parent" location="bottom">Delete</v-tooltip>
           </v-btn>
           <v-btn color="primary" class="grey lighten-4 ma-1">
             <v-icon large>mdi-download</v-icon>
+            <v-tooltip activator="parent" location="bottom">Download folder</v-tooltip>
           </v-btn>
           </v-row>
         </v-col>
@@ -82,9 +98,11 @@ function addServerNode(n) {
           <v-row no-gutters>
           <v-btn color="primary" class="grey lighten-4 ma-1">
             <v-icon large>mdi-play</v-icon>
+            <v-tooltip activator="parent" location="bottom">Execute</v-tooltip>
           </v-btn>
           <v-btn color="primary" class="grey lighten-4 ma-1">
             <v-icon large>mdi-content-save</v-icon>
+            <v-tooltip activator="parent" location="bottom">Save</v-tooltip>
           </v-btn>
           <v-text-field
             class="mt-n3"
@@ -96,7 +114,7 @@ function addServerNode(n) {
       </v-row>
       <v-row no-gutters>
        <v-col cols="3">
-      <Tree :nodes="nodes" :config="config" @nodeOpened="addServerNode">
+      <Tree :nodes="nodes" :config="config" @node-opened="addServerNode" @node-focus="focus">
         <template #loading-slot>
           <div class="progress">
             <div class="indeterminate"></div>
