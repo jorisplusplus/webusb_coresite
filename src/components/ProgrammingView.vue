@@ -3,6 +3,8 @@ import { ref, reactive } from "vue";
 import Tree from "vue3-treeview";
 import "vue3-treeview/dist/style.css";
 import { VAceEditor } from "vue3-ace-editor";
+import 'ace-builds/src-noconflict/mode-python';
+import 'ace-builds/src-noconflict/theme-monokai';
 
 const config = reactive({
   roots: ["flash", "sdcard"],
@@ -124,9 +126,9 @@ function addServerNode(n) {
       </v-col>
       <v-col>
       <v-ace-editor
-        lang="html"
+        lang="python"
         value="test"
-        theme="chrome"
+        theme="monokai"
         style="height: 600px" />
     </v-col>
     </v-row>
