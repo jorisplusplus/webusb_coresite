@@ -1,12 +1,12 @@
 <script setup>
-  import { ref } from 'vue'
+  import { ref, defineProps } from 'vue'
   import { WEBUSB } from './webusb'
-  const webusb = ref(new WEBUSB());
-  const drawer = ref(true)
-  const group = ref(null)
+  const props = defineProps(["webusb"]);
+  const drawer = ref(true);
+  const group = ref(null);
 
   async function connect() {
-    await webusb.value.connect();
+    await props.webusb.value.connect();
   }
 </script>
 

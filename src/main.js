@@ -5,16 +5,18 @@ import { loadFonts } from './plugins/webfontloader'
 import { createRouter, createWebHashHistory} from 'vue-router'
 import HomeView from "./components/HomeView"
 import ProgrammingView from "./components/ProgrammingView"
+import { WEBUSB } from './webusb'
+import { ref } from 'vue'
 
-const Home = { template: '<div>Home</div>' }
 const About = { template: '<div>About</div>' }
+const webusb = ref(new WEBUSB());
 
 const routes = [
   { path: '/', component: HomeView },
-  { path: '/programming', component: ProgrammingView},
-  { path: '/about', component: About },
-  { path: '/settings', component: About},
-  { path: '/update', component: About},
+  { path: '/programming', component: ProgrammingView, props: {webusb:webusb}},
+  { path: '/about', component: About, props: {webusb:webusb} },
+  { path: '/settings', component: About, props: {webusb:webusb}},
+  { path: '/update', component: About, props: {webusb:webusb}},
 ]
 
 const router = createRouter({
@@ -29,7 +31,7 @@ loadFonts()
 
 
 
-createApp(App)
+createApp(App, {webusb:webusb})
   .use(vuetify)
   .use(router)
   .mount('#app')

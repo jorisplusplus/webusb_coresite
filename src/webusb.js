@@ -100,7 +100,7 @@ export class WEBUSB {
     }
 
     buildpacketWithFilename(size, command, filename) {
-        let {buffer, message_id} = this.buildpacket(filename.length+1+size, command, message_id);
+        let {buffer, message_id} = this.buildpacket(filename.length+1+size, command);
         for(let i = 0; i<filename.length; i++) {
             buffer[PACKETHEADERSIZE+i] = filename.charCodeAt(i);
         }

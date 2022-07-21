@@ -1,11 +1,14 @@
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, defineProps} from "vue";
 import Tree from "vue3-treeview";
 import "vue3-treeview/dist/style.css";
 import { VAceEditor } from "vue3-ace-editor";
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 
+const props = defineProps(["webusb"]);
+console.log(props.webusb);
+//File tree view
 const config = reactive({
   roots: ["flash", "sdcard"],
   leaves: [],
@@ -13,11 +16,9 @@ const config = reactive({
   editable: false
 });
 
-const filename = ref("/flash/cache/scratch.py")
-
 const nodes = reactive({
   flash: {
-    text: "Flash",
+    text: "📁 Flash",
     type: "folder",
     state: {
       draggable: false
@@ -36,10 +37,6 @@ const nodes = reactive({
   },
 });
 
-function focus(n) {
-  console.log(n)
-}
-
 function addServerNode(n) {
   console.log("tata");
 
@@ -53,7 +50,7 @@ function addServerNode(n) {
     // create a fake node
     const id = `${Date.now()}`;
     const newNode = {
-      text: `loaded from server`,
+      text: `📄 loaded from server`,
       children: false,
       state: {},
     };
@@ -67,6 +64,38 @@ function addServerNode(n) {
     n.state.isLoading = false;
   }, 500);
 }
+
+//Ace editor
+const filename = ref("/flash/cache/scratch.py")
+
+
+//Buttons
+function createDir() {
+  props.webusb.value.sendHeartbeat();
+}
+
+function createFile() {
+
+}
+
+function renameFile() {
+
+}
+
+function deleteFile() {
+
+}
+
+function downloadFolder() {
+
+}
+
+
+function focus(n) {
+  console.log(n)
+}
+
+
 </script>
 
 <template>
@@ -74,23 +103,23 @@ function addServerNode(n) {
       <v-row no-gutters>
         <v-col cols="3">
           <v-row no-gutters>
-          <v-btn color="primary" class="grey lighten-4 ma-1">
+          <v-btn color="primary" class="grey lighten-4 ma-1" @click="createDir">
             <v-icon large>mdi-folder-plus</v-icon>
             <v-tooltip activator="parent" location="bottom">Create folder</v-tooltip>
           </v-btn>
-          <v-btn color="primary" class="grey lighten-4 ma-1">
+          <v-btn color="primary" class="grey lighten-4 ma-1" @click="createFile">
             <v-icon large>mdi-file</v-icon>
             <v-tooltip activator="parent" location="bottom">Create file</v-tooltip>
           </v-btn>
-          <v-btn color="primary" class="grey lighten-4 ma-1">
+          <v-btn color="primary" class="grey lighten-4 ma-1" @click="renameFile">
             <v-icon large>mdi-file-document</v-icon>
             <v-tooltip activator="parent" location="bottom">Rename file</v-tooltip>
           </v-btn>
-          <v-btn color="primary" class="grey lighten-4 ma-1">
+          <v-btn color="primary" class="grey lighten-4 ma-1" @click="deleteFile">
             <v-icon large>mdi-delete</v-icon>
             <v-tooltip activator="parent" location="bottom">Delete</v-tooltip>
           </v-btn>
-          <v-btn color="primary" class="grey lighten-4 ma-1">
+          <v-btn color="primary" class="grey lighten-4 ma-1" @click="downloadFolder">
             <v-icon large>mdi-download</v-icon>
             <v-tooltip activator="parent" location="bottom">Download folder</v-tooltip>
           </v-btn>
