@@ -3,6 +3,9 @@
  */
 import * as JSZip from 'jszip';
 
+const MAX_RETRIES = 3;
+const PACKETHEADERSIZE = 12;
+
 class PACKET {
     command
     size
@@ -33,7 +36,7 @@ class PACKET {
     }
 }
 
-class WEBUSB {
+export class WEBUSB {
     vendorId;
     interface_fsob;
     buffer_fsob;
@@ -55,11 +58,11 @@ class WEBUSB {
         this.vendorId = vendorId;
         this.interface_fsob = interface_fsob;
         this.interface_serial = interface_serial;
-        if (length(interface_fsob) != 2) {
+        if (interface_fsob.length != 2) {
             console.log("Invalid interface_fsob config");
             this.interface_fsob = null;
         }
-        if (length(interface_serial) != 2) {
+        if (interface_serial.length != 2) {
             console.log("Invalid serial config");
             this.interface_serial = null;
         }
@@ -90,18 +93,18 @@ class WEBUSB {
         let buffer = new Uint8Array(arraybuffer);
         new DataView(arraybuffer).setUint16(0, command, true);
         new DataView(arraybuffer).setUint32(2, size, true);
-        new DataView(arraybuffer).setUint32(8, current_message_id, true);
+        new DataView(arraybuffer).setUint32(8, this.current_message_id, true);
         buffer[6] = 0xDE;
         buffer[7] = 0xAD;
-        return {buffer: buffer, message_id: current_message_id};
+        return {buffer: buffer, message_id: this.current_message_id};
     }
 
     buildpacketWithFilename(size, command, filename) {
         let {buffer, message_id} = this.buildpacket(filename.length+1+size, command, message_id);
         for(let i = 0; i<filename.length; i++) {
-            buffer[packetheadersize+i] = filename.charCodeAt(i);
+            buffer[PACKETHEADERSIZE+i] = filename.charCodeAt(i);
         }
-        buffer[packetheadersize+filename.length] = 0;
+        buffer[PACKETHEADERSIZE+filename.length] = 0;
         return {buffer, message_id: message_id};
     }
 
@@ -113,7 +116,7 @@ class WEBUSB {
         console.log(buffer);
         this.current_message_id++;
         new DataView(buffer).setUint32(8, this.current_message_id, true);
-        return current_message_id;
+        return this.current_message_id;
     }
 
     send_buffer(buffer, message_id, return_string=true) {
@@ -162,15 +165,15 @@ class WEBUSB {
         }
         let {buffer, message_id} = this.buildpacket(dir_name.length+1, 4096);
         for(let i = 0; i<dir_name.length; i++) {
-            buffer[packetheadersize+i] = dir_name.charCodeAt(i);
+            buffer[PACKETHEADERSIZE+i] = dir_name.charCodeAt(i);
         }
-        buffer[packetheadersize+dir_name.length] = 0;
+        buffer[PACKETHEADERSIZE+dir_name.length] = 0;
         return this.send_buffer(buffer, message_id, true);
     }
 
     async readfile(file_name, return_string=true) {
         let {buffer, message_id} = this.buildpacketWithFilename(0, 4097, file_name);
-        contents = await this.send_buffer(buffer, message_id, return_string);
+        let contents = await this.send_buffer(buffer, message_id, return_string);
         if(contents === 'Can\'t open file') {
             contents = undefined;
         }
@@ -190,12 +193,12 @@ class WEBUSB {
         for(let i = 1; i < dirlist.length; i++) {
             let item = dirlist[i];
             if(item.charAt(0) == 'd') {
-                await deldir(dir_name + "/" + item.substr(1));
+                await this.deldir(dir_name + "/" + item.substr(1));
             } else {
-                await delfile(dir_name + "/" + item.substr(1));
+                await this.delfile(dir_name + "/" + item.substr(1));
             }
         }
-        await delfile(dir_name);
+        await this.delfile(dir_name);
     }
 
     async downloaddir(dir_name, zip=undefined) {
@@ -236,28 +239,28 @@ class WEBUSB {
     duplicatefile(source, destination) {
         let {buffer, message_id} = this.buildpacket(source.length+1+destination.length+1, 4100);
         for(let i = 0; i<source.length; i++) {
-            buffer[packetheadersize+i] = source.charCodeAt(i);
+            buffer[PACKETHEADERSIZE+i] = source.charCodeAt(i);
         }
-        buffer[packetheadersize+source.length] = 0;
+        buffer[PACKETHEADERSIZE+source.length] = 0;
     
         for(let i = 0; i<destination.length; i++) {
-            buffer[packetheadersize+source.length+1+i] = destination.charCodeAt(i);
+            buffer[PACKETHEADERSIZE+source.length+1+i] = destination.charCodeAt(i);
         }
-        buffer[packetheadersize+source.length+1+destination.length] = 0;
+        buffer[PACKETHEADERSIZE+source.length+1+destination.length] = 0;
         return this.send_buffer(buffer, message_id);
     }
 
     movefile(source, destination) {
         let {buffer, message_id} = this.buildpacket(source.length+1+destination.length+1, 4101);
         for(let i = 0; i<source.length; i++) {
-            buffer[packetheadersize+i] = source.charCodeAt(i);
+            buffer[PACKETHEADERSIZE+i] = source.charCodeAt(i);
         }
-        buffer[packetheadersize+source.length] = 0;
+        buffer[PACKETHEADERSIZE+source.length] = 0;
     
         for(let i = 0; i<destination.length; i++) {
-            buffer[packetheadersize+source.length+1+i] = destination.charCodeAt(i);
+            buffer[PACKETHEADERSIZE+source.length+1+i] = destination.charCodeAt(i);
         }
-        buffer[packetheadersize+source.length+1+destination.length] = 0;
+        buffer[PACKETHEADERSIZE+source.length+1+destination.length] = 0;
     
         return this.send_buffer(buffer, message_id);
     }
@@ -265,14 +268,14 @@ class WEBUSB {
     copyfile(source, destination) {
         let {buffer, message_id} = this.buildpacket(source.length+1+destination.length+1, 4100);
         for(let i = 0; i<source.length; i++) {
-            buffer[packetheadersize+i] = source.charCodeAt(i);
+            buffer[PACKETHEADERSIZE+i] = source.charCodeAt(i);
         }
-        buffer[packetheadersize+source.length] = 0;
+        buffer[PACKETHEADERSIZE+source.length] = 0;
     
         for(let i = 0; i<destination.length; i++) {
-            buffer[packetheadersize+source.length+1+i] = destination.charCodeAt(i);
+            buffer[PACKETHEADERSIZE+source.length+1+i] = destination.charCodeAt(i);
         }
-        buffer[packetheadersize+source.length+1+destination.length] = 0;
+        buffer[PACKETHEADERSIZE+source.length+1+destination.length] = 0;
     
         return this.send_buffer(buffer, message_id);
     }
@@ -281,7 +284,7 @@ class WEBUSB {
         console.log(filename);
         let {buffer, message_id} = this.buildpacketWithFilename(contents.length, 4098, filename);
         for(let i = 0; i<contents.length; i++) {
-            buffer[packetheadersize+filename.length+1+i] = contents.charCodeAt(i);
+            buffer[PACKETHEADERSIZE+filename.length+1+i] = contents.charCodeAt(i);
         }
     
         return this.send_buffer(buffer, message_id);
@@ -290,7 +293,7 @@ class WEBUSB {
     savefile(filename, contents) {
         let {buffer, message_id} = this.buildpacketWithFilename(contents.byteLength, 4098, filename);
         let uint8 = new Uint8Array(buffer);
-        uint8.set(new Uint8Array(contents), packetheadersize+filename.length+1);
+        uint8.set(new Uint8Array(contents), PACKETHEADERSIZE+filename.length+1);
         buffer = uint8.buffer;
         return this.send_buffer(buffer, message_id);
     }
@@ -301,25 +304,30 @@ class WEBUSB {
     }
 
     registerstdout(func) {
-        stdout_callback = func;
+        this.stdout_callback = func;
     }
     
     sendHeartbeat() {
-        let {buffer, message_id} = buildpacketWithFilename(0, 1, "beat");
-        send_buffer(buffer, message_id, true).then(data => {console.debug("Heartbeat")}, reason => {console.log("Heartbeat no response")});
+        let {buffer, message_id} = this.buildpacketWithFilename(0, 1, "beat");
+        this.send_buffer(buffer, message_id, true).then(data => {console.debug("Heartbeat")}, reason => {console.log("Heartbeat no response")});
     }
 
     reset() {
+        this.current_message_id = 1;
         this.buffer_fsob = new Uint8Array(0);
         this.requests = {};
         this.packet_fsob = null;
     }
 
     async connect() {
-        current_message_id = 1;
-        requests = {};
+        console.log(this);
+        this.reset();
+
+        if (this.device) {
+            await this.device.close();
+        }
         
-        res = await navigator.usb.requestDevice({ filters: [{ vendorId: this.vendorId}] });
+        let res = await navigator.usb.requestDevice({ filters: [{ vendorId: this.vendorId}] });
         this.device = res;
         window.dev = res;
         await this.device.open();
@@ -334,6 +342,59 @@ class WEBUSB {
         }
     }
 
+    handlePacket(packet) {
+        let message_type = packet.command
+        let message_id = packet.message_id
+        let data = packet.buffer
+        let textdecoder = undefined;
+        let file_contents = undefined;
+    
+        if (message_type === 1 && message_id === 0) {
+            textdecoder = new TextDecoder("ascii");
+            file_contents = textdecoder.decode(data);
+            file_contents = file_contents.substring(0, 2);
+            if (file_contents === "to") {
+                for(let key in this.requests) {
+                    let request = this.requests[key];
+                    if(!request.reject('Timeout')) {
+                        this.requests[this.current_message_id] = request;
+                    }
+                    delete this.requests[key];
+                }
+            } else if (file_contents === "te") {
+                for(let key in this.requests) {
+                    let request = this.requests[key];
+                    if(!request.reject('Timeout')) {
+                        this.requests[this.current_message_id] = request;
+                    }
+                    delete this.requests[key];
+                }
+            }
+            return;
+        }
+    
+        for(let key in this.requests) {
+            let request = this.requests[key];
+            if(key < message_id) {
+                request.reject('No response');
+                delete this.requests[key];
+            } else if(key == message_id) {
+                if(data.byteLength === 3) {
+                    let textdecoder = new TextDecoder("ascii");
+                    let text_content = textdecoder.decode(data.slice(0, 2));
+                    if(text_content === 'er') {
+                        request.reject('Unspecified error', true);  //Immediate reject when proper error is received
+                    } else {
+                        request.resolve(data, true);
+                    }
+                } else {
+                    request.resolve(data);
+                }
+                delete this.requests[key];
+            }
+        }
+    }
+
     readfsob() {
         this.device.transferIn(this.interface_fsob[1], 64).then(result => {
             // console.log("Tick");
@@ -343,12 +404,12 @@ class WEBUSB {
             tmp.set(new Uint8Array(result.data), this.buffer_fsob.byteLength);
             this.buffer_fsob = tmp
 
-            while (true) {
+            for (;;) {
                 if (this.buffer_fsob.byteLength < 12 && this.packet_fsob == null) { //Need new packet header but not enough data so breaking the loop
                     break;
                 }
                 if (this.packet_fsob == null) { //Need to receive a new packet header
-                    const packetdata = parsepacketheader(this.buffer_fsob.slice(0, 12));
+                    const packetdata = this.parsepacketheader(this.buffer_fsob.slice(0, 12));
                     if (packetdata["valid"] == false) {
                         console.log("Error in parsing header");
                     } else {
@@ -371,10 +432,10 @@ class WEBUSB {
 
     readserial() {
         this.device.transferIn(this.interface_serial[1], 64).then(result => {
-            console.log("Serial  in");
+            console.log("Serial in");
             if (this.stdout_callback != null) {
                 let textdecoder = new TextDecoder("ascii");
-                stdout_callback(textdecoder.decode(result.data));
+                this.stdout_callback(textdecoder.decode(result.data));
             }
             this.readserial();    
         }, error => {
@@ -389,89 +450,22 @@ class WEBUSB {
     }
 }
 
-
-let MAX_RETRIES = 3;
-
-export function handlePacket(message_type, message_id, data) {
-    let textdecoder = undefined;
-    let file_contents = undefined;
-
-    if (message_type === 1 && message_id === 0) {
-        textdecoder = new TextDecoder("ascii");
-        file_contents = textdecoder.decode(data);
-        file_contents = file_contents.substring(0, 2);
-        if (file_contents === "to") {
-            for(let key in requests) {
-                let request = requests[key];
-                if(!request.reject('Timeout')) {
-                    requests[current_message_id] = request;
-                }
-                delete requests[key];
-            }
-        } else if (file_contents === "te") {
-            for(let key in requests) {
-                let request = requests[key];
-                if(!request.reject('Timeout')) {
-                    requests[current_message_id] = request;
-                }
-                delete requests[key];
-            }
-        }
-        return;
-    }
-
-    for(let key in requests) {
-        let request = requests[key];
-        if(key < message_id) {
-            request.reject('No response');
-            delete requests[key];
-        } else if(key == message_id) {
-            if(data.byteLength === 3) {
-                let textdecoder = new TextDecoder("ascii");
-                let text_content = textdecoder.decode(data.slice(0, 2));
-                if(text_content === 'er') {
-                    request.reject('Unspecified error', true);  //Immediate reject when proper error is received
-                } else {
-                    request.resolve(data, true);
-                }
-            } else {
-                request.resolve(data);
-            }
-            delete requests[key];
-        }
-    }
-    // if(message_id in requests) {
-    //     let request = requests[message_id];
-    //     if(data.byteLength === 3) {
-    //         let textdecoder = new TextDecoder("ascii");
-    //         let text_content = textdecoder.decode(data.slice(0, 2));
-    //         if(text_content === 'er') {
-    //             request.reject('Unspecified error', true);  //Immediate reject when proper error is received
-    //         } else {
-    //             request.resolve(data, true);
-    //         }
-    //     } else {
-    //         request.resolve(data);
-    //     }
-    // }
-}
-
 let connect_resolves = [];
-function connect_check() {
-    if(device !== undefined && device.opened) {
-        for(let resolve of connect_resolves) {
-            resolve();
-        }
-        connect_resolves = [];
-    }
-}
-setInterval(connect_check, 500);
-setInterval(function(){
-    if(device.opened) {
-        if(Object.keys(requests).length < 5)
-            sendHeartbeat();
-    }
-}, 500);
+// function connect_check() {
+//     if(device !== undefined && device.opened) {
+//         for(let resolve of connect_resolves) {
+//             resolve();
+//         }
+//         connect_resolves = [];
+//     }
+// }
+// setInterval(connect_check, 500);
+// setInterval(function(){
+//     if(device.opened) {
+//         if(Object.keys(requests).length < 5)
+//             sendHeartbeat();
+//     }
+// }, 500);
 
 
 export function on_connect() {

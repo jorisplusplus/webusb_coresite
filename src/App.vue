@@ -1,8 +1,13 @@
 <script setup>
   import { ref } from 'vue'
-
+  import { WEBUSB } from './webusb'
+  const webusb = ref(new WEBUSB());
   const drawer = ref(true)
   const group = ref(null)
+
+  async function connect() {
+    await webusb.value.connect();
+  }
 </script>
 
 <template>
@@ -19,7 +24,7 @@
       <v-spacer></v-spacer>
 
       <v-btn icon>
-        <v-icon>mdi-connection</v-icon>
+        <v-icon @click="connect">mdi-connection</v-icon>
         <v-tooltip activator="parent" location="bottom">Connect badge</v-tooltip>
       </v-btn>
 
