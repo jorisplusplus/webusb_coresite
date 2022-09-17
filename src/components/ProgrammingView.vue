@@ -10,7 +10,6 @@ import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 
 const props = defineProps(["webusb"]);
-console.log(props.webusb);
 //File tree view
 const config = reactive({
   roots: ["flash", "sdcard"],
@@ -54,9 +53,7 @@ onMounted(() => {
   const terminal = new Terminal({convertEol: true});
   const terminalFit = new FitAddon();
   terminal.loadAddon(terminalFit);
-  console.log(xterm.value);
   terminal.open(xterm.value);
-  console.log(terminal);
   props.webusb.value.registerstdout((str) => {terminal.write(str)});
   terminal.onData((data) => {props.webusb.value.writeserial(data)});
 });

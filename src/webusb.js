@@ -290,7 +290,7 @@ export class WEBUSB {
         if (this.device) {
             await this.device.close();
         }
-        
+        this.reset();
         let res = await navigator.usb.requestDevice({ filters: [{ vendorId: this.vendorId}] });
         this.device = res;
         window.dev = res;
@@ -312,7 +312,8 @@ export class WEBUSB {
 
     readfsob() {
         this.device.transferIn(this.interface_fsob[1], 80).then(result => {
-            console.log("Tick");
+            console.log("WebUSB data in: len %d", result.data.buffer.byteLength);
+            console.log(result.data.buffer);
             let newbuffer = new Uint8Array(this.rxbuffer.byteLength + result.data.buffer.byteLength);
             newbuffer.set(this.rxbuffer);
             newbuffer.set(new Uint8Array(result.data.buffer), this.rxbuffer.byteLength);
@@ -328,6 +329,13 @@ export class WEBUSB {
                     console.log("Packet invalid");
                 }
                 this.rxbuffer = this.rxbuffer.slice(80);
+            }
+            if (this.rxbuffer.byteLength > 0) {
+                let view = new DataView(this.rxbuffer.buffer);
+                if (view.getUint16(0, true) != 0xFAAF) {
+                    console.log("ERROR: Invalid buffer");
+                    this.rxbuffer = new Uint8Array(0);
+                }
             }
             //console.log(this.rxbuffer);
             this.readfsob();    
@@ -368,8 +376,8 @@ export class WEBUSB {
             this.handleAck(packet.ack_id);
             return false;
         }
-        if (packet.packet_id > (self.rxPacketID + 1) || packet.packet_id < self.rxPacketID) {
-            console.warn("Unexpected packet");
+        if (packet.packet_id != (this.rxPacketID + 1) && packet.packet_id > 0) {
+            console.warn("Unexpected packet %d %d", packet.packet_id, this.rxPacketID);
             return false;
         }
         this.handleAck(packet.ack_id);
@@ -580,9 +588,12 @@ export class WEBUSB {
     }
 
     reset() {
-        this.current_message_id = 1;
         this.buffer_fsob = new Uint8Array(0);
         this.requests = {};
         this.packet_fsob = null;
+        packetId = 1;
+        ackId = 0;
+        messageId = 1;
+        this.rxPacketID = 0;
     }
 }
